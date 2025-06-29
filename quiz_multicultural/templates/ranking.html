@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='images/robozinho.png') }}" type="image/png">
+    <title data-key="rankingPageTitle">Ranking Geral</title>
+    <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .ranking-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            width: 100%;
+        }
+        .ranking-column {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .ranking-column h3 {
+            margin-top: 0;
+            color: #8c22be;
+            border-bottom: 2px solid #7705ec;
+            padding-bottom: 10px;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .no-ranking {
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 data-key="rankingTitle">Ranking</h1>
+
+        <div class="ranking-container">
+            <div class="ranking-column">
+                <h3 data-key="easyLevelRanking">Nível Fácil</h3>
+                {% if ranking_facil %}
+                    <ol>
+                        {% for pontuacao in ranking_facil %}
+                            <li>{{ pontuacao.nome_jogador }} - {{ pontuacao.pontos }} <span data-key="pointsText">pontos</span></li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="no-ranking" data-key="noRankingYet">Ninguém jogou neste nível ainda.</p>
+                {% endif %}
+            </div>
+
+            <div class="ranking-column">
+                <h3 data-key="mediumLevelRanking">Nível Médio</h3>
+                {% if ranking_medio %}
+                    <ol>
+                        {% for pontuacao in ranking_medio %}
+                            <li>{{ pontuacao.nome_jogador }} - {{ pontuacao.pontos }} <span data-key="pointsText">pontos</span></li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="no-ranking" data-key="noRankingYet">Ninguém jogou neste nível ainda.</p>
+                {% endif %}
+            </div>
+
+            <div class="ranking-column">
+                <h3 data-key="hardLevelRanking">Nível Difícil</h3>
+                {% if ranking_dificil %}
+                    <ol>
+                        {% for pontuacao in ranking_dificil %}
+                            <li>{{ pontuacao.nome_jogador }} - {{ pontuacao.pontos }} <span data-key="pointsText">pontos</span></li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="no-ranking" data-key="noRankingYet">Ninguém jogou neste nível ainda.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <br>
+        <a href="/" class="home-link" data-key="backToHomeButton">Voltar ao Início</a>
+    </div>
+    <script>
+        const translations = {
+            pt: {
+                rankingPageTitle: "Ranking Geral",
+                rankingTitle: "Ranking",
+                easyLevelRanking: "Nível Fácil",
+                mediumLevelRanking: "Nível Médio",
+                hardLevelRanking: "Nível Difícil",
+                pointsText: "pontos",
+                noRankingYet: "Ninguém jogou neste nível ainda.",
+                backToHomeButton: "Voltar ao Início"
+            },
+            en: {
+                rankingPageTitle: "Overall Ranking",
+                rankingTitle: "Ranking",
+                easyLevelRanking: "Easy Level",
+                mediumLevelRanking: "Medium Level",
+                hardLevelRanking: "Hard Level",
+                pointsText: "points",
+                noRankingYet: "No one has played this level yet.",
+                backToHomeButton: "Back to Home"
+            },
+            es: {
+                rankingPageTitle: "Clasificación General",
+                rankingTitle: "Clasificación",
+                easyLevelRanking: "Nivel Fácil",
+                mediumLevelRanking: "Nivel Medio",
+                hardLevelRanking: "Nivel Difícil",
+                pointsText: "puntos",
+                noRankingYet: "Nadie ha jugado en este nivel todavía.",
+                backToHomeButton: "Volver al Inicio"
+            },
+            fr: {
+                rankingPageTitle: "Classement Général",
+                rankingTitle: "Classement",
+                easyLevelRanking: "Niveau Facile",
+                mediumLevelRanking: "Niveau Moyen",
+                hardLevelRanking: "Niveau Difficile",
+                pointsText: "points",
+                noRankingYet: "Personne n'a encore joué à ce niveau.",
+                backToHomeButton: "Retour à l'Accueil"
+            },
+            it: {
+                rankingPageTitle: "Classifica Generale",
+                rankingTitle: "Classifica",
+                easyLevelRanking: "Livello Facile",
+                mediumLevelRanking: "Livello Medio",
+                hardLevelRanking: "Livello Difficile",
+                pointsText: "punti",
+                noRankingYet: "Nessuno ha ancora giocato a questo livello.",
+                backToHomeButton: "Torna alla Home"
+            }
+        };
+
+        function setLanguage(lang) {
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.dataset.key;
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                    if (element.tagName === 'TITLE') {
+                        document.title = translations[lang][key];
+                    }
+                }
+            });
+            document.documentElement.lang = lang;
+        }
+
+        const savedLanguage = localStorage.getItem('quizLanguage') || 'pt';
+        setLanguage(savedLanguage);
+    </script>
+</body>
+</html>

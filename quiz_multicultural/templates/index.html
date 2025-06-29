@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Culture Quiz</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/robozinho.png') }}" type="image/png">
+    <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        #robo-2d {
+            display: block;
+            margin: 0 auto 15px auto;
+            width: 100px;
+            height: auto;
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='images/robo.png') }}" id="robo-2d" alt="Mascote do Quiz">
+        <h1 data-key="welcomeTitle">Bem-vindo ao Culture Quiz!</h1><br><br>
+
+        <select id="language-select">
+            <option value="pt" selected>Português</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+        </select>
+
+        <form id="start-form">
+            <input type="text" id="nome" data-key="namePlaceholder" placeholder="Digite seu nome" required>
+            <select id="nivel">
+                <option value="facil" data-key="easyOption">Fácil</option>
+                <option value="medio" data-key="mediumOption">Médio</option>
+                <option value="dificil" data-key="hardOption">Difícil</option>
+            </select>
+        </form><br><br>
+        <div class="button-group">
+            <button type="submit" form="start-form" data-key="startQuizButton">Começar o Quiz</button>
+            <a href="{{ url_for('ranking') }}" class="ranking-link" data-key="viewRankingButton">Ver Ranking</a>
+            <button type="button" id="team-button" data-key="teamButton">Equipe</button>
+        </div>
+    </div>
+
+    <div id="team-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 data-key="ourTeamTitle">Nossa Equipe:</h3>
+            <ul>
+                <li>Davi Amorim de Lima</li>
+                <li>Eduarda Moraes</li>
+                <li>Elen Monteiro</li>
+                <li>Gisele da Silva</li>
+                <li>Isabella Schlemper</li>
+                <li>Jéssica Pedroso</li>
+                <li>Livia Miyuki</li>
+                <li>Maria Fernanda Delfino</li>
+                <li>Nathalia Schlemper</li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        const translations = {
+            pt: {
+                welcomeTitle: "Bem-vindo ao Culture Quiz!",
+                namePlaceholder: "Digite seu nome",
+                easyOption: "Fácil",
+                mediumOption: "Médio",
+                hardOption: "Difícil",
+                startQuizButton: "Começar o Quiz",
+                viewRankingButton: "Ver Ranking",
+                teamButton: "Equipe",
+                ourTeamTitle: "Nossa Equipe:"
+            },
+            en: {
+                welcomeTitle: "Welcome to Culture Quiz!",
+                namePlaceholder: "Enter your name",
+                easyOption: "Easy",
+                mediumOption: "Medium",
+                hardOption: "Hard",
+                startQuizButton: "Start Quiz",
+                viewRankingButton: "View Ranking",
+                teamButton: "Team",
+                ourTeamTitle: "Our Team:"
+            },
+            es: {
+                welcomeTitle: "¡Bienvenido al Culture Quiz!",
+                namePlaceholder: "Ingresa tu nombre",
+                easyOption: "Fácil",
+                mediumOption: "Medio",
+                hardOption: "Difícil",
+                startQuizButton: "Empezar el Quiz",
+                viewRankingButton: "Ver Clasificación",
+                teamButton: "Equipo",
+                ourTeamTitle: "Nuestro Equipo:"
+            },
+            fr: {
+                welcomeTitle: "Bienvenue au Culture Quiz!",
+                namePlaceholder: "Entrez votre nom",
+                easyOption: "Facile",
+                mediumOption: "Moyen",
+                hardOption: "Difficile",
+                startQuizButton: "Commencer le Quiz",
+                viewRankingButton: "Voir le Classement",
+                teamButton: "Équipe",
+                ourTeamTitle: "Notre Équipe:"
+            },
+            it: {
+                welcomeTitle: "Benvenuto al Culture Quiz!",
+                namePlaceholder: "Inserisci il tuo nome",
+                easyOption: "Facile",
+                mediumOption: "Medio",
+                hardOption: "Difficile",
+                startQuizButton: "Inizia il Quiz",
+                viewRankingButton: "Vedi Classifica",
+                teamButton: "Squadra",
+                ourTeamTitle: "La Nostra Squadra:"
+            }
+        };
+
+        function setLanguage(lang) {
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.dataset.key;
+                if (translations[lang] && translations[lang][key]) {
+                    if (element.tagName === 'INPUT') {
+                        element.placeholder = translations[lang][key];
+                    } else {
+                        element.textContent = translations[lang][key];
+                    }
+                }
+            });
+            document.documentElement.lang = lang;
+            localStorage.setItem('quizLanguage', lang);
+        }
+
+        const languageSelect = document.getElementById('language-select');
+        languageSelect.addEventListener('change', (event) => {
+            setLanguage(event.target.value);
+        });
+
+        const savedLanguage = localStorage.getItem('quizLanguage') || 'pt';
+        languageSelect.value = savedLanguage;
+        setLanguage(savedLanguage);
+
+        const robo = document.getElementById('robo-2d');
+        if (robo) {
+            window.addEventListener('mousemove', function(e) {
+                const rect = robo.getBoundingClientRect();
+                const roboCentroX = rect.left + rect.width / 2;
+                if (e.clientX > roboCentroX) {
+                    robo.style.transform = 'scaleX(1)';
+                } else {
+                    robo.style.transform = 'scaleX(-1)';
+                }
+            });
+        }
+
+        document.getElementById('start-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('nome').value;
+            const nivel = document.getElementById('nivel').value;
+            const currentLanguage = localStorage.getItem('quizLanguage') || 'pt';
+            localStorage.setItem('playerName', nome);
+            window.location.href = `/quiz/${nivel}?lang=${currentLanguage}`;
+        });
+
+        const teamButton = document.getElementById('team-button');
+        const teamModal = document.getElementById('team-modal');
+        const closeButton = teamModal ? teamModal.querySelector('.close-button') : null;
+
+        if (teamButton && teamModal && closeButton) {
+            teamButton.addEventListener('click', function() {
+                teamModal.classList.add('is-visible');
+            });
+
+            closeButton.addEventListener('click', function() {
+                teamModal.classList.remove('is-visible');
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target === teamModal) {
+                    teamModal.classList.remove('is-visible');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

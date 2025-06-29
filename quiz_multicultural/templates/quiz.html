@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='images/robozinho.png') }}" type="image/png">
+    <title data-key="quizPageTitle" data-raw-nivel="{{ nivel }}">Quiz - Nível {{ nivel.capitalize() }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
+</head>
+<body>
+    <div class="container" data-perguntas='{{ perguntas|tojson|safe }}'>
+        <h1 data-key="quizTitle" data-raw-nivel="{{ nivel }}">Quiz - Nível {{ nivel.capitalize() }}</h1>
+        <div id="quiz-container">
+        </div>
+        <button id="submit-btn" style="display:none;" data-key="finishQuizButton">Finalizar Quiz</button>
+        <div id="resultado" style="display:none;"></div>
+    </div>
+
+    <div id="message-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modal-message"></p>
+            <button id="modal-confirm-button" class="button-style" style="display:none;"></button>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            pt: {
+                level_facil: "Fácil",
+                level_medio: "Médio",
+                level_dificil: "Difícil",
+                quizPageTitle: (rawNivel) => `Quiz - Nível ${translations.pt['level_' + rawNivel]}`,
+                quizTitle: (rawNivel) => `Quiz - Nível ${translations.pt['level_' + rawNivel]}`,
+                finishQuizButton: "Finalizar Quiz",
+                quizFinished: "Quiz finalizado!",
+                correctFeedback: "Você acertou!",
+                wrongFeedback: (correctAnswer) => `Errado! A resposta certa era: <strong>${correctAnswer}</strong>`,
+                playerNameNotFound: "Nome do jogador não encontrado! Redirecionando para a página inicial.",
+                scoreMessage: (acertos, total) => `Você acertou ${acertos} de ${total} perguntas!`,
+                playAgainButton: "Jogar Novamente",
+                viewRankingButton: "Ver Ranking",
+                modalConfirm: "OK"
+            },
+            en: {
+                level_facil: "Easy",
+                level_medio: "Medium",
+                level_dificil: "Hard",
+                quizPageTitle: (rawNivel) => `Quiz - ${translations.en['level_' + rawNivel]} Level`,
+                quizTitle: (rawNivel) => `Quiz - ${translations.en['level_' + rawNivel]} Level`,
+                finishQuizButton: "Finish Quiz",
+                quizFinished: "Quiz finished!",
+                correctFeedback: "You got it right!",
+                wrongFeedback: (correctAnswer) => `Wrong! The correct answer was: <strong>${correctAnswer}</strong>`,
+                playerNameNotFound: "Player name not found! Redirecting to homepage.",
+                scoreMessage: (acertos, total) => `You got ${acertos} out of ${total} questions right!`,
+                playAgainButton: "Play Again",
+                viewRankingButton: "View Ranking",
+                modalConfirm: "OK"
+            },
+            es: {
+                level_facil: "Fácil",
+                level_medio: "Medio",
+                level_dificil: "Difícil",
+                quizPageTitle: (rawNivel) => `Quiz - Nivel ${translations.es['level_' + rawNivel]}`,
+                quizTitle: (rawNivel) => `Quiz - Nivel ${translations.es['level_' + rawNivel]}`,
+                finishQuizButton: "Finalizar Quiz",
+                quizFinished: "¡Quiz finalizado!",
+                correctFeedback: "¡Correcto!",
+                wrongFeedback: (correctAnswer) => `¡Incorrecto! La respuesta correcta era: <strong>${correctAnswer}</strong>`,
+                playerNameNotFound: "¡Nombre del jugador no encontrado! Redirigiendo a la página de inicio.",
+                scoreMessage: (acertos, total) => `¡Acertaste ${acertos} de ${total} preguntas!`,
+                playAgainButton: "Jugar de Nuevo",
+                viewRankingButton: "Ver Clasificación",
+                modalConfirm: "OK"
+            },
+            fr: {
+                level_facil: "Facile",
+                level_medio: "Moyen",
+                level_dificil: "Difficile",
+                quizPageTitle: (rawNivel) => `Quiz - Niveau ${translations.fr['level_' + rawNivel]}`,
+                quizTitle: (rawNivel) => `Quiz - Niveau ${translations.fr['level_' + rawNivel]}`,
+                finishQuizButton: "Terminer le Quiz",
+                quizFinished: "Quiz terminé!",
+                correctFeedback: "Vous avez eu raison!",
+                wrongFeedback: (correctAnswer) => `Faux! La bonne réponse était: <strong>${correctAnswer}</strong>`,
+                playerNameNotFound: "Nom du joueur introuvable! Redirection vers la page d'accueil.",
+                scoreMessage: (acertos, total) => `Vous avez répondu correctement à ${acertos} questions sur ${total}!`,
+                playAgainButton: "Jouer à nouveau",
+                viewRankingButton: "Voir le Classement",
+                modalConfirm: "OK"
+            },
+            it: {
+                level_facil: "Facile",
+                level_medio: "Medio",
+                level_dificil: "Difficile",
+                quizPageTitle: (rawNivel) => `Quiz - Livello ${translations.it['level_' + rawNivel]}`,
+                quizTitle: (rawNivel) => `Quiz - Livello ${translations.it['level_' + rawNivel]}`,
+                finishQuizButton: "Termina Quiz",
+                quizFinished: "Quiz terminato!",
+                correctFeedback: "Hai indovinato!",
+                wrongFeedback: (correctAnswer) => `Sbagliato! La risposta corretta era: <strong>${correctAnswer}</strong>`,
+                playerNameNotFound: "Nome giocatore non trovato! Reindirizzamento alla homepage.",
+                scoreMessage: (acertos, total) => `Hai risposto correttamente a ${acertos} domande su ${total}!`,
+                playAgainButton: "Gioca di Nuovo",
+                viewRankingButton: "Vedi Classifica",
+                modalConfirm: "OK"
+            }
+        };
+
+        function setLanguage(lang) {
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.dataset.key;
+                const rawNivel = element.dataset.rawNivel;
+
+                if (translations[lang] && translations[lang][key]) {
+                    if (typeof translations[lang][key] === 'function') {
+                        if (key === 'quizPageTitle' || key === 'quizTitle') {
+                            element.textContent = translations[lang][key](rawNivel);
+                            if (element.tagName === 'TITLE') {
+                                document.title = translations[lang][key](rawNivel);
+                            }
+                        }
+                    } else {
+                        element.textContent = translations[lang][key];
+                    }
+                }
+            });
+            document.documentElement.lang = lang;
+        }
+
+        const quizDiv = document.querySelector('.container');
+        const perguntas = JSON.parse(quizDiv.dataset.perguntas);
+        const nivel = "{{ nivel }}";
+        let respostasUsuario = [];
+        let perguntaAtual = 0;
+
+        const quizContainer = document.getElementById('quiz-container');
+        const submitBtn = document.getElementById('submit-btn');
+        const resultadoDiv = document.getElementById('resultado');
+
+        const messageModal = document.getElementById('message-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseButton = messageModal.querySelector('.close-button');
+        const modalConfirmButton = document.getElementById('modal-confirm-button');
+
+        const savedLanguage = "{{ current_lang }}";
+        setLanguage(savedLanguage);
+
+        function showModal(message, confirmAction = null) {
+            modalMessage.innerHTML = message;
+            if (confirmAction) {
+                modalConfirmButton.style.display = 'block';
+                modalConfirmButton.textContent = translations[savedLanguage].modalConfirm;
+                modalConfirmButton.onclick = () => {
+                    messageModal.classList.remove('is-visible');
+                    confirmAction();
+                };
+            } else {
+                modalConfirmButton.style.display = 'none';
+            }
+            messageModal.classList.add('is-visible');
+        }
+
+        modalCloseButton.addEventListener('click', () => {
+            messageModal.classList.remove('is-visible');
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === messageModal) {
+                messageModal.classList.remove('is-visible');
+            }
+        });
+
+        function mostrarPergunta() {
+            if (perguntaAtual < perguntas.length) {
+                const p = perguntas[perguntaAtual];
+                let opcoesHtml = '';
+                p[1].forEach((opcao, index) => {
+                    opcoesHtml += `<button class="opcao" data-index="${index}">${opcao}</button>`;
+                });
+                quizContainer.innerHTML = `
+                    <h2>${p[0]}</h2>
+                    <div class="opcoes-container">${opcoesHtml}</div>
+                    <div id="feedback-container"></div> `;
+            } else {
+                quizContainer.innerHTML = `<h2 data-key="quizFinished">${translations[savedLanguage].quizFinished}</h2>`;
+                submitBtn.style.display = 'block';
+            }
+        }
+
+        quizContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('opcao') && !e.target.disabled) {
+
+                const respostaEscolhida = parseInt(e.target.dataset.index);
+                const respostaCorreta = perguntas[perguntaAtual][2];
+                const todosOsBotoes = quizContainer.querySelectorAll('.opcao');
+                const feedbackContainer = document.getElementById('feedback-container');
+
+                todosOsBotoes.forEach(button => {
+                    button.disabled = true;
+                });
+
+                respostasUsuario[perguntaAtual] = respostaEscolhida;
+
+                if (respostaEscolhida === respostaCorreta) {
+                    e.target.classList.add('correta');
+                    feedbackContainer.innerHTML = `<p class="feedback-text correto" data-key="correctFeedback">${translations[savedLanguage].correctFeedback}</p>`;
+                } else {
+                    e.target.classList.add('errada');
+                    todosOsBotoes[respostaCorreta].classList.add('correta');
+                    const textoRespostaCerta = perguntas[perguntaAtual][1][respostaCorreta];
+                    feedbackContainer.innerHTML = `<p class="feedback-text errado" data-key="wrongFeedback">${translations[savedLanguage].wrongFeedback(textoRespostaCerta)}</p>`;
+                }
+                setTimeout(() => {
+                    perguntaAtual++;
+                    mostrarPergunta();
+                }, 2000);
+            }
+        });
+
+        submitBtn.addEventListener('click', async () => {
+            const nome = localStorage.getItem('playerName');
+            if (!nome) {
+                showModal(translations[savedLanguage].playerNameNotFound, () => {
+                    window.location.href = '/';
+                });
+                return;
+            }
+
+            const response = await fetch('/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nome: nome,
+                    respostas: respostasUsuario,
+                    nivel: nivel,
+                    lang: savedLanguage 
+                }),
+            });
+
+            const result = await response.json();
+            resultadoDiv.innerHTML = `
+                <h3 data-key="scoreMessage">${translations[savedLanguage].scoreMessage(result.acertos, result.total)}</h3>
+                <div class="quiz-end-buttons">
+                <a href="/" class="button-style" data-key="playAgainButton">${translations[savedLanguage].playAgainButton}</a>
+                <a href="/ranking" class="button-style" data-key="viewRankingButton">${translations[savedLanguage].viewRankingButton}</a>
+                </div>
+            `;
+            resultadoDiv.style.display = 'block';
+            submitBtn.style.display = 'none';
+        });
+        mostrarPergunta();
+    </script>
+</body>
+</html>
